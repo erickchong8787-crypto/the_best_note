@@ -1,0 +1,27 @@
+{
+  "name": "the-best-note-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "sync-db": "prisma db push"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "@prisma/client": "^5.21.1",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "prisma": "^5.21.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "7.0.2"
+  }
+}
