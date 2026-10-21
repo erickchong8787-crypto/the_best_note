@@ -1,43 +1,64 @@
 import { NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { getCurrentUser, getSql } from '../../lib/auth';
 
-// This establishes a direct, blazing-fast web connection using your database URL
-const sql = neon(process.env.DATABASE_URL);
-
-// 1. GET Method: Fetches all notes directly via SQL query
 export async function GET() {
   try {
-    const notes = await sql`SELECT * FROM "Note" ORDER BY "createdAt" DESC`;
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Sign in to view your notes.' }, { status: 401 });
+    }
+
+    const sql = getSql();
+    const notes = await sql`
+      SELECT id, title, content, "createdAt", "updatedAt"
+      FROM "Note"
+      WHERE "userId" = ${user.id}
+      ORDER BY "createdAt" DESC
+    `;
     return NextResponse.json(notes);
   } catch (error) {
-    console.error("Database error details:", error);
-    return NextResponse.json({ error: "Failed to fetch notes" }, { status: 500 });
+    console.error('Database error details:', error);
+    return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
   }
 }
 
-// POST method: Saves a new note directly via SQL insert
 export async function POST(request) {
   try {
-    const { title, content } = await request.json();
-    
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Sign in to save notes.' }, { status: 401 });
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Enter a valid title and note.' }, { status: 400 });
+    }
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Enter a valid title and note.' }, { status: 400 });
+    }
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    const content = typeof body.content === 'string' ? body.content.trim() : '';
+    if (!title || !content) {
+      return NextResponse.json({ error: 'A title and note are required.' }, { status: 400 });
+    }
+
+    const sql = getSql();
     const id = crypto.randomUUID();
     const createdAt = new Date().toISOString();
     const updatedAt = createdAt;
 
-    // We execute the SQL insert statement here
     const result = await sql`
-      INSERT INTO "Note" (id, title, content, "createdAt", "updatedAt")
-      VALUES (${id}, ${title}, ${content}, ${createdAt}, ${updatedAt})
-      RETURNING *
+      INSERT INTO "Note" (id, title, content, "createdAt", "updatedAt", "userId")
+      VALUES (${id}, ${title}, ${content}, ${createdAt}, ${updatedAt}, ${user.id})
+      RETURNING id, title, content, "createdAt", "updatedAt"
     `;
 
-    // CRITICAL FIX: The Neon driver returns an Array list (e.g., [newNote]). 
-    // grab the single object sitting at index 0 to send to the UI
-    const newNote = result[0]; 
-
+    const newNote = result[0];
     return NextResponse.json(newNote, { status: 201 });
   } catch (error) {
-    console.error("Database error details:", error);
-    return NextResponse.json({ error: "Failed to create note" }, { status: 500 });
+    console.error('Database error details:', error);
+    return NextResponse.json({ error: 'Failed to create note' }, { status: 500 });
   }
 }

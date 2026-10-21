@@ -1,16 +1,14 @@
 import './global.css';
 
 export const metadata = {
-  title: 'Cloud Note Pad',
-  description: 'A beautiful Next.js monorepo note app backed by Neon Postgres',
+  title: 'Stillnote — a little space for your mind',
+  description: 'A calm, private space to collect your thoughts and ideas.',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body style={{ backgroundColor: '#54b8b7', minHeight: '100vh', fontFamily: 'sans-serif', margin: 0, padding: 0 }}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
